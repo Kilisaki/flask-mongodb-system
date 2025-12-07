@@ -53,7 +53,7 @@
 
 1. **Клонируйте репозиторий:**
 ```bash
-git clone https://github.com/yourusername/flask-mongodb-system.git
+git clone https://github.com/Kilisaki/flask-mongodb-system.git
 cd flask-mongodb-system
 
 flask-mongodb-system/
