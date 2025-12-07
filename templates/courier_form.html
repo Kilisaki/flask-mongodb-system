@@ -1,0 +1,619 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} посылку{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .form-section h4 {
+        color: var(--secondary-color);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .required::after {
+        content: " *";
+        color: #e74c3c;
+    }
+    
+    .passport-field {
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .dimension-input {
+        position: relative;
+    }
+    
+    .dimension-input::after {
+        content: "см";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .weight-input::after {
+        content: "кг";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    
+    .cost-input::after {
+        content: "руб.";
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2><i class="bi bi-box-seam"></i> {{ action }} посылку</h2>
+        
+        {% if errors %}
+        <div class="alert alert-danger alert-permanent">
+            <h5><i class="bi bi-exclamation-triangle-fill"></i> Обнаружены ошибки:</h5>
+            <ul class="mb-0">
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <form method="POST" class="mt-4" id="courierForm" novalidate>
+            <!-- Секция 1: Отправитель и Получатель -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-section">
+                        <h4><i class="bi bi-person-up"></i> Отправитель</h4>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">ФИО</label>
+                            <input type="text" class="form-control" name="sender_name" 
+                                   value="{{ parcel.sender_name if parcel else '' }}" 
+                                   required
+                                   pattern="[А-Яа-яЁёA-Za-z\s\-\.]{2,100}"
+                                   title="Только буквы, пробелы, точки и дефисы (2-100 символов)">
+                            <div class="form-text">Минимум 2 символа, только буквы и разрешенные символы</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">Адрес</label>
+                            <textarea class="form-control" name="sender_address" rows="2" 
+                                      required minlength="5" maxlength="500">{{ parcel.sender_address if parcel else '' }}</textarea>
+                            <div class="form-text">Полный адрес с индексом</div>
+                        </div>
+                        
+                        <h5 class="mt-4"><i class="bi bi-passport"></i> Паспортные данные</h5>
+                        <div class="passport-field">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Серия</label>
+                                        <input type="text" class="form-control" name="sender_passport_series" 
+                                               value="{{ parcel.sender_passport_series if parcel else '' }}" 
+                                               required pattern="\d{4}" title="4 цифры" maxlength="4"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Номер</label>
+                                        <input type="text" class="form-control" name="sender_passport_number" 
+                                               value="{{ parcel.sender_passport_number if parcel else '' }}" 
+                                               required pattern="\d{6}" title="6 цифр" maxlength="6"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Дата рождения</label>
+                                        <input type="date" class="form-control" name="sender_birth_date" 
+                                               value="{{ parcel.sender_birth_date if parcel else '' }}" required
+                                               max="{{ today }}">
+                                        <div class="form-text">Минимум 14 лет</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Пол</label>
+                                        <select class="form-select" name="sender_gender" required>
+                                            <option value="">Выберите пол</option>
+                                            <option value="М" {% if parcel and parcel.sender_gender == 'М' %}selected{% endif %}>Мужской</option>
+                                            <option value="Ж" {% if parcel and parcel.sender_gender == 'Ж' %}selected{% endif %}>Женский</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-section">
+                        <h4><i class="bi bi-person-down"></i> Получатель</h4>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">ФИО</label>
+                            <input type="text" class="form-control" name="receiver_name" 
+                                   value="{{ parcel.receiver_name if parcel else '' }}" 
+                                   required
+                                   pattern="[А-Яа-яЁёA-Za-z\s\-\.]{2,100}"
+                                   title="Только буквы, пробелы, точки и дефисы (2-100 символов)">
+                            <div class="form-text">Минимум 2 символа, только буквы и разрешенные символы</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">Адрес</label>
+                            <textarea class="form-control" name="receiver_address" rows="2" 
+                                      required minlength="5" maxlength="500">{{ parcel.receiver_address if parcel else '' }}</textarea>
+                            <div class="form-text">Полный адрес с индексом</div>
+                        </div>
+                        
+                        <h5 class="mt-4"><i class="bi bi-passport"></i> Паспортные данные</h5>
+                        <div class="passport-field">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Серия</label>
+                                        <input type="text" class="form-control" name="receiver_passport_series" 
+                                               value="{{ parcel.receiver_passport_series if parcel else '' }}" 
+                                               required pattern="\d{4}" title="4 цифры" maxlength="4"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Номер</label>
+                                        <input type="text" class="form-control" name="receiver_passport_number" 
+                                               value="{{ parcel.receiver_passport_number if parcel else '' }}" 
+                                               required pattern="\d{6}" title="6 цифр" maxlength="6"
+                                               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Дата рождения</label>
+                                        <input type="date" class="form-control" name="receiver_birth_date" 
+                                               value="{{ parcel.receiver_birth_date if parcel else '' }}" required
+                                               max="{{ today }}">
+                                        <div class="form-text">Минимум 14 лет</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Пол</label>
+                                        <select class="form-select" name="receiver_gender" required>
+                                            <option value="">Выберите пол</option>
+                                            <option value="М" {% if parcel and parcel.receiver_gender == 'М' %}selected{% endif %}>Мужской</option>
+                                            <option value="Ж" {% if parcel and parcel.receiver_gender == 'Ж' %}selected{% endif %}>Женский</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Секция 2: Характеристики посылки -->
+            <div class="form-section">
+                <h4><i class="bi bi-box"></i> Характеристики посылки</h4>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3 weight-input" style="position: relative;">
+                            <label class="form-label required">Вес (кг)</label>
+                            <input type="number" step="0.01" min="0.01" max="1000" class="form-control" name="weight" 
+                                   value="{{ parcel.weight if parcel else '' }}" required>
+                            <div class="form-text">От 0.01 до 1000 кг</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3 dimension-input" style="position: relative;">
+                            <label class="form-label required">Длина (см)</label>
+                            <input type="number" min="1" max="500" class="form-control" name="length" 
+                                   value="{{ parcel.length if parcel else '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3 dimension-input" style="position: relative;">
+                            <label class="form-label required">Ширина (см)</label>
+                            <input type="number" min="1" max="500" class="form-control" name="width" 
+                                   value="{{ parcel.width if parcel else '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3 dimension-input" style="position: relative;">
+                            <label class="form-label required">Высота (см)</label>
+                            <input type="number" min="1" max="500" class="form-control" name="height" 
+                                   value="{{ parcel.height if parcel else '' }}" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Описание посылки</label>
+                            <textarea class="form-control" name="description" rows="3" 
+                                      maxlength="1000">{{ parcel.description if parcel else '' }}</textarea>
+                            <div class="form-text">Опишите содержимое посылки (макс. 1000 символов)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Особые отметки</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="fragile" 
+                                       id="fragile" {% if parcel and parcel.fragile %}checked{% endif %}>
+                                <label class="form-check-label" for="fragile">
+                                    <i class="bi bi-exclamation-triangle text-warning"></i> Хрупкий груз
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="insured" 
+                                       id="insured" {% if parcel and parcel.insured %}checked{% endif %}>
+                                <label class="form-check-label" for="insured">
+                                    <i class="bi bi-shield-check text-success"></i> Застраховано
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3 cost-input" style="position: relative;">
+                            <label class="form-label">Стоимость доставки (руб.)</label>
+                            <input type="number" step="0.01" min="0" max="1000000" 
+                                   class="form-control" name="delivery_cost" 
+                                   value="{{ parcel.delivery_cost if parcel else '0' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Секция 3: Информация о курьере -->
+            <div class="form-section">
+                <h4><i class="bi bi-truck"></i> Информация о курьере</h4>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label required">ФИО курьера</label>
+                            <input type="text" class="form-control" name="courier_name" 
+                                   value="{{ parcel.courier_name if parcel else '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label required">Телефон</label>
+                            <input type="tel" class="form-control" name="courier_phone" 
+                                   value="{{ parcel.courier_phone if parcel else '' }}" 
+                                   required pattern="(\+7|8)\d{10}" 
+                                   title="Формат: +7XXXXXXXXXX или 8XXXXXXXXXX">
+                            <div class="form-text">Формат: +7XXXXXXXXXX или 8XXXXXXXXXX</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Компания курьера</label>
+                            <input type="text" class="form-control" name="courier_company" 
+                                   value="{{ parcel.courier_company if parcel else '' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Транспортное средство</label>
+                            <input type="text" class="form-control" name="courier_vehicle" 
+                                   value="{{ parcel.courier_vehicle if parcel else '' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Секция 4: Даты и статус -->
+            <div class="form-section">
+                <h4><i class="bi bi-calendar-event"></i> Даты и статус</h4>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label required">Дата отправления</label>
+                            <input type="date" class="form-control" name="dispatch_date" 
+                                   value="{{ parcel.dispatch_date if parcel else today }}" 
+                                   required min="{{ today }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label required">Ожидаемая дата получения</label>
+                            <input type="date" class="form-control" name="delivery_date" 
+                                   value="{{ parcel.delivery_date if parcel else '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label required">Статус</label>
+                            <select class="form-select" name="status" required>
+                                <option value="">Выберите статус</option>
+                                <option value="Принято" {% if parcel and parcel.status == 'Принято' %}selected{% endif %}>Принято</option>
+                                <option value="Обработка" {% if parcel and parcel.status == 'Обработка' %}selected{% endif %}>Обработка</option>
+                                <option value="В пути" {% if parcel and parcel.status == 'В пути' %}selected{% endif %}>В пути</option>
+                                <option value="В пункте выдачи" {% if parcel and parcel.status == 'В пункте выдачи' %}selected{% endif %}>В пункте выдачи</option>
+                                <option value="Доставлено" {% if parcel and parcel.status == 'Доставлено' %}selected{% endif %}>Доставлено</option>
+                                <option value="Отменено" {% if parcel and parcel.status == 'Отменено' %}selected{% endif %}>Отменено</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Кнопки -->
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                <div>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-circle"></i> {{ action }}
+                    </button>
+                    <a href="{{ url_for('courier_list') }}" class="btn btn-secondary btn-lg ms-2">
+                        <i class="bi bi-x-circle"></i> Отмена
+                    </a>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-info" onclick="validateForm()">
+                        <i class="bi bi-check-all"></i> Проверить данные
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-3 text-muted">
+                <small><i class="bi bi-info-circle"></i> Поля, отмеченные *, обязательны для заполнения</small>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Предпросмотр -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Предпросмотр данных</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Контент будет заполнен JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Устанавливаем минимальные даты
+    const dispatchDate = document.querySelector('input[name="dispatch_date"]');
+    const deliveryDate = document.querySelector('input[name="delivery_date"]');
+    const birthDateSender = document.querySelector('input[name="sender_birth_date"]');
+    const birthDateReceiver = document.querySelector('input[name="receiver_birth_date"]');
+    
+    if (dispatchDate && !dispatchDate.value) {
+        dispatchDate.value = today;
+    }
+    
+    // Автоматическая установка даты получения (через 3 дня)
+    if (dispatchDate && deliveryDate && !deliveryDate.value) {
+        const threeDaysLater = new Date(dispatchDate.value);
+        threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+        deliveryDate.value = threeDaysLater.toISOString().split('T')[0];
+    }
+    
+    // Проверка дат
+    if (dispatchDate && deliveryDate) {
+        dispatchDate.addEventListener('change', function() {
+            deliveryDate.min = this.value;
+            if (deliveryDate.value && deliveryDate.value < this.value) {
+                alert('Дата получения не может быть раньше даты отправления!');
+                deliveryDate.value = this.value;
+            }
+        });
+        
+        deliveryDate.addEventListener('change', function() {
+            if (this.value < dispatchDate.value) {
+                alert('❌ Ошибка: Дата получения не может быть раньше даты отправления!');
+                this.value = dispatchDate.value;
+            }
+        });
+    }
+    
+    // Проверка возраста (минимум 14 лет)
+    const minBirthDate = new Date();
+    minBirthDate.setFullYear(minBirthDate.getFullYear() - 120);
+    const maxBirthDate = new Date();
+    maxBirthDate.setFullYear(maxBirthDate.getFullYear() - 14);
+    
+    if (birthDateSender) {
+        birthDateSender.max = maxBirthDate.toISOString().split('T')[0];
+        birthDateSender.min = minBirthDate.toISOString().split('T')[0];
+    }
+    
+    if (birthDateReceiver) {
+        birthDateReceiver.max = maxBirthDate.toISOString().split('T')[0];
+        birthDateReceiver.min = minBirthDate.toISOString().split('T')[0];
+    }
+    
+    // Автоматическая валидация полей при потере фокуса
+    const inputs = document.querySelectorAll('input[required], select[required], textarea[required]');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (!this.checkValidity()) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                
+                // Показываем сообщение об ошибке
+                let errorMsg = '';
+                if (this.validity.valueMissing) {
+                    errorMsg = 'Это поле обязательно для заполнения';
+                } else if (this.validity.patternMismatch) {
+                    errorMsg = this.title || 'Неверный формат данных';
+                } else if (this.validity.rangeUnderflow || this.validity.rangeOverflow) {
+                    errorMsg = this.title || 'Значение вне допустимого диапазона';
+                }
+                
+                if (errorMsg) {
+                    let errorDiv = this.parentElement.querySelector('.invalid-feedback');
+                    if (!errorDiv) {
+                        errorDiv = document.createElement('div');
+                        errorDiv.className = 'invalid-feedback';
+                        this.parentElement.appendChild(errorDiv);
+                    }
+                    errorDiv.textContent = errorMsg;
+                }
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    });
+    
+    // Валидация телефона
+    const phoneInput = document.querySelector('input[name="courier_phone"]');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            // Удаляем все нецифровые символы
+            let value = this.value.replace(/\D/g, '');
+            
+            // Добавляем +7 если начинается с 7 или 8
+            if (value.startsWith('7') && value.length === 11) {
+                this.value = '+7' + value.substring(1);
+            } else if (value.startsWith('8') && value.length === 11) {
+                this.value = '8' + value.substring(1);
+            } else {
+                this.value = value;
+            }
+        });
+    }
+});
+
+function validateForm() {
+    const form = document.getElementById('courierForm');
+    let isValid = true;
+    const errors = [];
+    
+    // Проверка веса
+    const weight = parseFloat(form.querySelector('input[name="weight"]').value);
+    if (weight <= 0 || weight > 1000) {
+        errors.push('Вес должен быть от 0.01 до 1000 кг');
+        isValid = false;
+    }
+    
+    // Проверка габаритов
+    ['length', 'width', 'height'].forEach(dim => {
+        const value = parseFloat(form.querySelector(`input[name="${dim}"]`).value);
+        if (value <= 0 || value > 500) {
+            errors.push(`${dim} должен быть от 1 до 500 см`);
+            isValid = false;
+        }
+    });
+    
+    // Проверка дат
+    const dispatch = new Date(form.querySelector('input[name="dispatch_date"]').value);
+    const delivery = new Date(form.querySelector('input[name="delivery_date"]').value);
+    if (delivery < dispatch) {
+        errors.push('Дата получения не может быть раньше даты отправления');
+        isValid = false;
+    }
+    
+    // Проверка возраста отправителя
+    const senderBirth = new Date(form.querySelector('input[name="sender_birth_date"]').value);
+    const senderAge = new Date().getFullYear() - senderBirth.getFullYear();
+    if (senderAge < 14) {
+        errors.push('Отправитель должен быть старше 14 лет');
+        isValid = false;
+    }
+    
+    // Проверка возраста получателя
+    const receiverBirth = new Date(form.querySelector('input[name="receiver_birth_date"]').value);
+    const receiverAge = new Date().getFullYear() - receiverBirth.getFullYear();
+    if (receiverAge < 14) {
+        errors.push('Получатель должен быть старше 14 лет');
+        isValid = false;
+    }
+    
+    // Проверка паспортных данных
+    const passportFields = ['sender_passport_series', 'sender_passport_number', 
+                           'receiver_passport_series', 'receiver_passport_number'];
+    passportFields.forEach(field => {
+        const input = form.querySelector(`input[name="${field}"]`);
+        if (!input.checkValidity()) {
+            errors.push(`Неверный формат ${field}`);
+            isValid = false;
+        }
+    });
+    
+    if (!isValid) {
+        alert('Обнаружены ошибки:\n' + errors.join('\n'));
+        return false;
+    } else {
+        alert('✅ Все данные корректны! Можно отправлять форму.');
+        return true;
+    }
+}
+
+// Показ предпросмотра
+function showPreview() {
+    const form = document.getElementById('courierForm');
+    const previewContent = document.getElementById('previewContent');
+    
+    let html = '<div class="row">';
+    html += '<div class="col-md-6"><h6>Отправитель:</h6>';
+    html += '<p><strong>ФИО:</strong> ' + form.sender_name.value + '</p>';
+    html += '<p><strong>Адрес:</strong> ' + form.sender_address.value + '</p>';
+    html += '<p><strong>Паспорт:</strong> ' + form.sender_passport_series.value + ' ' + form.sender_passport_number.value + '</p>';
+    html += '</div>';
+    
+    html += '<div class="col-md-6"><h6>Получатель:</h6>';
+    html += '<p><strong>ФИО:</strong> ' + form.receiver_name.value + '</p>';
+    html += '<p><strong>Адрес:</strong> ' + form.receiver_address.value + '</p>';
+    html += '<p><strong>Паспорт:</strong> ' + form.receiver_passport_series.value + ' ' + form.receiver_passport_number.value + '</p>';
+    html += '</div></div>';
+    
+    html += '<hr><div class="row"><div class="col-md-12"><h6>Посылка:</h6>';
+    html += '<p><strong>Вес:</strong> ' + form.weight.value + ' кг</p>';
+    html += '<p><strong>Габариты:</strong> ' + form.length.value + '×' + form.width.value + '×' + form.height.value + ' см</p>';
+    html += '</div></div>';
+    
+    previewContent.innerHTML = html;
+    
+    const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+    previewModal.show();
+}
+</script>
+{% endblock %}

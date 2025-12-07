@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; }
+    h1 { font-size: 18px; }
+    h2 { font-size: 14px; margin-bottom: 6px; }
+    .item { margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #ddd; }
+    .meta { color: #444; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <h1>Отчёт: {{ 'Курьерская доставка' if doc_type == 'deliveries' else 'Повышение квалификации' }}</h1>
+  {% for it in items %}
+    <div class="item">
+      <h2>{{ it._id }}</h2>
+      {% if doc_type == 'deliveries' %}
+        <div><strong>Отправитель:</strong> {{ it.sender.full_name }} — {{ it.sender.address }}</div>
+        <div><strong>Получатель:</strong> {{ it.receiver.full_name }} — {{ it.receiver.address }}</div>
+        <div class="meta">Паспорт: {{ it.sender.passport_series }} {{ it.sender.passport_number }} | Курьер: {{ it.courier.name if it.courier }}</div>
+        <div class="meta">Дата отправления: {{ it.send_date }} | Дата получения: {{ it.receive_date }}</div>
+      {% else %}
+        <div><strong>Курс:</strong> {{ it.name }}</div>
+        <div><strong>Преподаватель:</strong> {{ it.teacher.name }}</div>
+        <div class="meta">Даты: {{ it.start_date }} — {{ it.end_date }} | Часы: {{ it.hours }}</div>
+        {% if it.employees %}
+          <div><strong>Сотрудники:</strong>
+            <ul>
+              {% for e in it.employees %}
+                <li>{{ e.full_name }} — Паспорт: {{ e.passport_series }} {{ e.passport_number }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  {% endfor %}
+</body>
+</html>

@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Курс {{ course.course_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('courses_list') }}">Курсы</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ course.course_name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-mortarboard"></i> {{ course.course_name }}
+                <span class="badge {% if course.status == 'Завершен' %}bg-success
+                                  {% elif course.status == 'В процессе' %}bg-warning
+                                  {% elif course.status == 'Отменен' %}bg-danger
+                                  {% else %}bg-info{% endif %} ms-2">
+                    {{ course.status }}
+                </span>
+            </h2>
+            <div>
+                <a href="{{ url_for('edit_course', id=course._id) }}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Редактировать
+                </a>
+                <a href="{{ url_for('courses_list') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Назад
+                </a>
+            </div>
+        </div>
+        
+        <!-- Основная информация -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-info-circle"></i> Основная информация</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="40%">Код курса:</th>
+                                        <td><strong>{{ course.course_code if course.course_code else 'N/A' }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Категория:</th>
+                                        <td>{{ course.category if course.category else 'Общий' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Количество часов:</th>
+                                        <td>{{ course.hours }} академических часов</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Стоимость:</th>
+                                        <td>{{ course.price|default(0, true) }} руб.</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="40%">Место проведения:</th>
+                                        <td>{{ course.location if course.location else 'Не указано' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Макс. участников:</th>
+                                        <td>{{ course.max_participants if course.max_participants else 30 }} человек</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Текущих участников:</th>
+                                        <td>{{ course.employees|length }} человек</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Заполненность:</th>
+                                        <td>
+                                            {% set max_participants = course.max_participants if course.max_participants else 30 %}
+                                            {% set percentage = (course.employees|length / max_participants * 100)|round(1) %}
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar bg-{% if percentage > 90 %}danger{% elif percentage > 70 %}warning{% else %}success{% endif %}" 
+                                                     role="progressbar" style="width: {{ percentage }}%"></div>
+                                            </div>
+                                            <small>{{ percentage }}%</small>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        {% if course.description %}
+                        <div class="mt-3">
+                            <h6>Описание курса:</h6>
+                            <p>{{ course.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-badge"></i> Преподаватель</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">ФИО:</th>
+                                <td>{{ course.teacher.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Отдел:</th>
+                                <td>{{ course.teacher.department }}</td>
+                            </tr>
+                            {% if course.teacher.qualification %}
+                            <tr>
+                                <th>Квалификация:</th>
+                                <td>{{ course.teacher.qualification }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if course.teacher.email %}
+                            <tr>
+                                <th>Email:</th>
+                                <td>{{ course.teacher.email }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if course.teacher.phone %}
+                            <tr>
+                                <th>Телефон:</th>
+                                <td>{{ course.teacher.phone }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Даты проведения -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Даты проведения</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 border rounded">
+                                    <h6>Дата начала</h6>
+                                    <h4 class="text-primary">{{ course.dates.start_date }}</h4>
+                                    <small class="text-muted">Начало обучения</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 border rounded">
+                                    <h6>Дата окончания</h6>
+                                    <h4 class="text-warning">{{ course.dates.end_date }}</h4>
+                                    <small class="text-muted">Завершение обучения</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 border rounded">
+                                    <h6>Дедлайн регистрации</h6>
+                                    <h4 class="text-{% if course.dates.registration_deadline and course.dates.registration_deadline < today %}danger{% else %}success{% endif %}">
+                                        {% if course.dates.registration_deadline %}
+                                            {{ course.dates.registration_deadline }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </h4>
+                                    <small class="text-muted">
+                                        {% if course.dates.registration_deadline and course.dates.registration_deadline < today %}
+                                            Регистрация закрыта
+                                        {% elif course.dates.registration_deadline %}
+                                            До {{ course.dates.registration_deadline }}
+                                        {% else %}
+                                            Не установлен
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Прогресс курса -->
+                        <div class="mt-4">
+                            <h6>Прогресс курса:</h6>
+                            <div class="progress" style="height: 25px;">
+                                {% if course.status == 'Завершен' %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 100%">Завершен</div>
+                                {% elif course.status == 'В процессе' %}
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 75%">В процессе</div>
+                                {% elif course.status == 'Набор' %}
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: 50%">Набор</div>
+                                {% elif course.status == 'Запланирован' %}
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 25%">Запланирован</div>
+                                {% else %}
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 100%">{{ course.status }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Участники курса -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0"><i class="bi bi-people"></i> Участники курса ({{ course.employees|length }}/3)</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if course.employees %}
+                            <div class="row">
+                                {% for emp in course.employees %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ emp.name }}</h6>
+                                            <p class="card-text">
+                                                <strong>Должность:</strong> {{ emp.position }}<br>
+                                                {% if emp.department %}
+                                                <strong>Отдел:</strong> {{ emp.department }}<br>
+                                                {% endif %}
+                                                {% if emp.email %}
+                                                <strong>Email:</strong> {{ emp.email }}
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted text-center py-4">На курс еще не записаны сотрудники</p>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> Максимальное количество участников на курсе: 3 человека
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Мета-информация -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-plus"></i> Создано: 
+                                    {{ course.created_at.strftime('%d.%m.%Y %H:%M') if course.created_at else 'Н/Д' }}
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-check"></i> Обновлено: 
+                                    {% if course.updated_at %}
+                                        {{ course.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                                    {% else %}
+                                        Не обновлялось
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Действия -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="{{ url_for('courses_list') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> К списку курсов
+                        </a>
+                        <a href="{{ url_for('add_course') }}" class="btn btn-primary ms-2">
+                            <i class="bi bi-plus-circle"></i> Добавить новый курс
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('edit_course', id=course._id) }}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </a>
+                        <a href="{{ url_for('delete_course', id=course._id) }}" 
+                           class="btn btn-danger ms-2"
+                           onclick="return confirm('Вы уверены, что хотите удалить этот курс?')">
+                            <i class="bi bi-trash"></i> Удалить
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

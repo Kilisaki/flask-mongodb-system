@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center">
+        <h1 class="mt-5 mb-4" style="color: var(--secondary-color);">
+            <i class="bi bi-archive-fill"></i> Добро пожаловать в систему управления документами
+        </h1>
+        <p class="lead mb-5" style="color: #666;">
+            Современная система для управления курьерской доставкой и курсами повышения квалификации
+        </p>
+        
+        <div class="row mt-4">
+            <!-- Статистика -->
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-primary">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="bi bi-box-seam"></i> Всего посылок</h5>
+                        <p class="card-text display-6">{{ courier_count if courier_count else '0' }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="bi bi-mortarboard"></i> Всего курсов</h5>
+                        <p class="card-text display-6">{{ courses_count if courses_count else '0' }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="bi bi-truck"></i> В доставке</h5>
+                        <p class="card-text display-6">{{ in_transit if in_transit else '0' }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card text-white bg-info">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="bi bi-calendar-check"></i> Предстоящие курсы</h5>
+                        <p class="card-text display-6">{{ upcoming_courses if upcoming_courses else '0' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Быстрые действия -->
+        <div class="row mt-5">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-box-seam"></i> Курьерская доставка</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Управление посылками: отслеживание, добавление, редактирование и удаление</p>
+                        <div class="d-grid gap-2 d-md-block">
+                            <a href="{{ url_for('courier_list') }}" class="btn btn-primary">
+                                <i class="bi bi-list-ul"></i> Просмотреть все
+                            </a>
+                            <a href="{{ url_for('add_courier') }}" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Добавить посылку
+                            </a>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> Трек-номера, статусы доставки, паспортные данные
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-mortarboard"></i> Курсы повышения квалификации</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Управление курсами: планирование, запись сотрудников, отчеты</p>
+                        <div class="d-grid gap-2 d-md-block">
+                            <a href="{{ url_for('courses_list') }}" class="btn btn-success">
+                                <i class="bi bi-list-ul"></i> Просмотреть все
+                            </a>
+                            <a href="{{ url_for('add_course') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Добавить курс
+                            </a>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> Коды курсов, преподаватели, расписание
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Отчеты -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Отчеты и аналитика</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="card-text">Детальные отчеты по всем видам документов с возможностью экспорта</p>
+                                <ul>
+                                    <li>Статистика по курьерам и посылкам</li>
+                                    <li>Отчеты по курсам повышения квалификации</li>
+                                    <li>Экспорт в PDF и DOCX форматах</li>
+                                    <li>Графики и диаграммы</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="{{ url_for('show_reports') }}" class="btn btn-info btn-lg">
+                                    <i class="bi bi-graph-up"></i> Перейти к отчетам
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Последние добавления -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Последние посылки</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_parcels %}
+                            <div class="list-group">
+                                {% for parcel in recent_parcels[:5] %}
+                                <a href="{{ url_for('view_courier', id=parcel._id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ parcel.sender.full_name }} → {{ parcel.receiver.full_name }}</h6>
+                                        <small>
+                                            <span class="badge {% if parcel.status == 'Доставлено' %}bg-success
+                                                            {% elif parcel.status == 'В пути' %}bg-warning
+                                                            {% elif parcel.status == 'Отменено' %}bg-danger
+                                                            {% else %}bg-info{% endif %}">
+                                                {{ parcel.status }}
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-box"></i> {{ parcel.parcel.weight }} кг | 
+                                        <i class="bi bi-calendar"></i> {{ parcel.dates.dispatch_date }}
+                                    </small>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Нет добавленных посылок</p>
+                        {% endif %}
+                        <div class="mt-3 text-center">
+                            <a href="{{ url_for('courier_list') }}" class="btn btn-outline-primary btn-sm">
+                                Показать все посылки
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Последние курсы</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_courses %}
+                            <div class="list-group">
+                                {% for course in recent_courses[:5] %}
+                                <a href="{{ url_for('view_course', id=course._id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ course.course_name }}</h6>
+                                        <small>
+                                            <span class="badge {% if course.status == 'Завершен' %}bg-success
+                                                            {% elif course.status == 'В процессе' %}bg-warning
+                                                            {% elif course.status == 'Отменен' %}bg-danger
+                                                            {% else %}bg-info{% endif %}">
+                                                {{ course.status }}
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person"></i> {{ course.teacher.name }} | 
+                                        <i class="bi bi-clock"></i> {{ course.hours }} часов
+                                    </small>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Нет добавленных курсов</p>
+                        {% endif %}
+                        <div class="mt-3 text-center">
+                            <a href="{{ url_for('courses_list') }}" class="btn btn-outline-success btn-sm">
+                                Показать все курсы
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обновляем статистику на главной странице
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            // Здесь можно обновить данные на странице
+            console.log('Статистика загружена:', data);
+        })
+        .catch(error => console.error('Ошибка загрузки статистики:', error));
+});
+</script>
+{% endblock %}

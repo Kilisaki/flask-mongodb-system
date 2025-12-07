@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}📦 Список посылок{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-box-seam"></i> Список посылок</h2>
+    <div>
+        <a href="{{ url_for('add_courier') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Добавить посылку
+        </a>
+        <a href="{{ url_for('export_pdf', report_type='courier', report_name='all') }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-pdf"></i> Экспорт PDF
+        </a>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3" id="filterForm">
+            <div class="col-md-3">
+                <label class="form-label">Статус</label>
+                <select class="form-select" name="status">
+                    <option value="">Все статусы</option>
+                    <option value="Принято">Принято</option>
+                    <option value="Обработка">Обработка</option>
+                    <option value="В пути">В пути</option>
+                    <option value="В пункте выдачи">В пункте выдачи</option>
+                    <option value="Доставлено">Доставлено</option>
+                    <option value="Отменено">Отменено</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Отправитель</label>
+                <input type="text" class="form-control" name="sender" placeholder="ФИО отправителя">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Получатель</label>
+                <input type="text" class="form-control" name="receiver" placeholder="ФИО получателя">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Трек номер</label>
+                <input type="text" class="form-control" name="tracking" placeholder="TRK...">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Дата отправки (от)</label>
+                <input type="date" class="form-control" name="date_from">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Дата отправки (до)</label>
+                <input type="date" class="form-control" name="date_to">
+            </div>
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Применить фильтры
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetFilters()">
+                        <i class="bi bi-x-circle"></i> Сбросить
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица посылок -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>Трек номер</th>
+                        <th>Отправитель</th>
+                        <th>Получатель</th>
+                        <th>Вес (кг)</th>
+                        <th>Курьер</th>
+                        <th>Дата отправки</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parcel in parcels %}
+                    <tr>
+                        <td>
+                            <strong>{{ parcel.tracking_number if parcel.tracking_number else 'N/A' }}</strong>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <strong>{{ parcel.sender.full_name }}</strong>
+                                <small class="text-muted">{{ parcel.sender.address[:30] }}...</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column">
+                                <strong>{{ parcel.receiver.full_name }}</strong>
+                                <small class="text-muted">{{ parcel.receiver.address[:30] }}...</small>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary rounded-pill">{{ parcel.parcel.weight }}</span>
+                        </td>
+                        <td>{{ parcel.courier.name }}</td>
+                        <td>{{ parcel.dates.dispatch_date }}</td>
+                        <td>
+                            {% if parcel.status == 'Доставлено' %}
+                                <span class="status-badge status-delivered">
+                                    <i class="bi bi-check-circle"></i> {{ parcel.status }}
+                                </span>
+                            {% elif parcel.status == 'В пути' %}
+                                <span class="status-badge status-in-transit">
+                                    <i class="bi bi-truck"></i> {{ parcel.status }}
+                                </span>
+                            {% elif parcel.status == 'Обработка' %}
+                                <span class="status-badge status-processing">
+                                    <i class="bi bi-gear"></i> {{ parcel.status }}
+                                </span>
+                            {% elif parcel.status == 'Отменено' %}
+                                <span class="status-badge status-cancelled">
+                                    <i class="bi bi-x-circle"></i> {{ parcel.status }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ parcel.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="action-buttons">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('view_courier', id=parcel._id) }}" class="btn btn-sm btn-info" 
+                                   title="Просмотр">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_courier', id=parcel._id) }}" class="btn btn-sm btn-warning"
+                                   title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('delete_courier', id=parcel._id) }}" 
+                                   class="btn btn-sm btn-danger" 
+                                   onclick="return confirm('Вы уверены, что хотите удалить эту посылку?')"
+                                   title="Удалить">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-box-seam" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Нет посылок для отображения</p>
+                            <a href="{{ url_for('add_courier') }}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Добавить первую посылку
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Пагинация -->
+        {% if parcels and parcels|length > 0 %}
+        <nav aria-label="Навигация по страницам" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">Предыдущая</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Следующая</a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+        
+        <!-- Статистика -->
+        {% if parcels and parcels|length > 0 %}
+        <div class="mt-4 pt-4 border-top">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Всего посылок</h6>
+                            <p class="card-text display-6">{{ parcels|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Общий вес</h6>
+                            <p class="card-text display-6">
+                                {{ parcels|sum(attribute='parcel.weight')|round(2) }}
+                                <small class="text-muted">кг</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">В доставке</h6>
+                            <p class="card-text display-6">
+                                {{ parcels|selectattr('status', 'equalto', 'В пути')|list|length }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Доставлено</h6>
+                            <p class="card-text display-6">
+                                {{ parcels|selectattr('status', 'equalto', 'Доставлено')|list|length }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Кнопка быстрого добавления -->
+<div class="fixed-bottom text-end p-3">
+    <a href="{{ url_for('add_courier') }}" class="btn btn-success btn-lg rounded-pill shadow-lg" 
+       style="width: 60px; height: 60px;" title="Добавить посылку">
+        <i class="bi bi-plus" style="font-size: 1.5rem;"></i>
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function resetFilters() {
+    document.getElementById('filterForm').reset();
+    document.getElementById('filterForm').submit();
+}
+
+// Автоматическое обновление статусов
+setInterval(function() {
+    // Здесь можно добавить AJAX запрос для обновления статусов
+}, 30000); // каждые 30 секунд
+</script>
+{% endblock %}

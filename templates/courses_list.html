@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}🎓 Список курсов повышения квалификации{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-mortarboard"></i> Список курсов повышения квалификации</h2>
+    <div>
+        <a href="{{ url_for('add_course') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Добавить курс
+        </a>
+        <a href="{{ url_for('export_pdf', report_type='courses', report_name='all') }}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-pdf"></i> Экспорт PDF
+        </a>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3" id="filterForm">
+            <div class="col-md-3">
+                <label class="form-label">Статус</label>
+                <select class="form-select" name="status">
+                    <option value="">Все статусы</option>
+                    <option value="Запланирован">Запланирован</option>
+                    <option value="Набор">Набор</option>
+                    <option value="В процессе">В процессе</option>
+                    <option value="Завершен">Завершен</option>
+                    <option value="Отменен">Отменен</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Преподаватель</label>
+                <input type="text" class="form-control" name="teacher" placeholder="ФИО преподавателя">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Код курса</label>
+                <input type="text" class="form-control" name="code" placeholder="COURSE...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Категория</label>
+                <select class="form-select" name="category">
+                    <option value="">Все категории</option>
+                    <option value="Технический">Технический</option>
+                    <option value="Гуманитарный">Гуманитарный</option>
+                    <option value="Управленческий">Управленческий</option>
+                    <option value="Общий">Общий</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Дата начала (от)</label>
+                <input type="date" class="form-control" name="date_from">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Дата начала (до)</label>
+                <input type="date" class="form-control" name="date_to">
+            </div>
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Применить фильтры
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetFilters()">
+                        <i class="bi bi-x-circle"></i> Сбросить
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Карточки курсов -->
+<div class="row">
+    {% for course in courses %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">{{ course.course_name }}</h5>
+                    <small class="text-muted">Код: {{ course.course_code }}</small>
+                </div>
+                <div>
+                    {% if course.status == 'Запланирован' %}
+                        <span class="badge bg-info">{{ course.status }}</span>
+                    {% elif course.status == 'Набор' %}
+                        <span class="badge bg-primary">{{ course.status }}</span>
+                    {% elif course.status == 'В процессе' %}
+                        <span class="badge bg-warning">{{ course.status }}</span>
+                    {% elif course.status == 'Завершен' %}
+                        <span class="badge bg-success">{{ course.status }}</span>
+                    {% elif course.status == 'Отменен' %}
+                        <span class="badge bg-danger">{{ course.status }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ course.status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">
+                        <i class="bi bi-person"></i> Преподаватель: {{ course.teacher.name }}
+                    </h6>
+                    <p class="card-text mb-1">
+                        <i class="bi bi-building"></i> {{ course.teacher.department }}
+                    </p>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="card-text">
+                            <i class="bi bi-calendar-event"></i> 
+                            <strong>Даты:</strong><br>
+                            {{ course.dates.start_date }} - {{ course.dates.end_date }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="card-text">
+                            <i class="bi bi-clock"></i> 
+                            <strong>Часы:</strong> {{ course.hours }}<br>
+                            <i class="bi bi-currency-exchange"></i> 
+                            <strong>Стоимость:</strong> {{ course.price|default(0, true) }} руб.
+                        </p>
+                    </div>
+                </div>
+                
+                {% if course.employees %}
+                <div class="mb-3">
+                    <h6>Записанные сотрудники ({{ course.employees|length }}/3):</h6>
+                    <div class="list-group list-group-flush">
+                        {% for emp in course.employees %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <strong>{{ emp.name }}</strong>
+                                <small>{{ emp.position }}</small>
+                            </div>
+                            {% if emp.department %}
+                            <small class="text-muted">{{ emp.department }}</small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if course.description %}
+                <div class="mb-3">
+                    <h6>Описание:</h6>
+                    <p class="card-text">{{ course.description[:150] }}{% if course.description|length > 150 %}...{% endif %}</p>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-plus"></i> 
+                        Создан: {{ course.created_at.strftime('%d.%m.%Y %H:%M') if course.created_at else 'Н/Д' }}
+                    </small>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{{ url_for('view_course', id=course._id) }}" class="btn btn-sm btn-info">
+                            <i class="bi bi-eye"></i> Подробнее
+                        </a>
+                    </div>
+                    <div class="action-buttons">
+                        <a href="{{ url_for('edit_course', id=course._id) }}" class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{{ url_for('delete_course', id=course._id) }}" 
+                           class="btn btn-sm btn-danger" 
+                           onclick="return confirm('Вы уверены, что хотите удалить этот курс?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-mortarboard" style="font-size: 3rem; color: #6c757d;"></i>
+                <h4 class="mt-3">Курсы не найдены</h4>
+                <p class="text-muted">Нет курсов для отображения. Добавьте первый курс!</p>
+                <a href="{{ url_for('add_course') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Добавить курс
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Статистика -->
+{% if courses and courses|length > 0 %}
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-graph-up"></i> Статистика курсов</h5>
+        <div class="row">
+            <div class="col-md-3 text-center">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Всего курсов</h6>
+                        <p class="card-text display-6">{{ courses|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Предстоящих</h6>
+                        <p class="card-text display-6">
+                            {% set upcoming = courses|selectattr('status', 'equalto', 'Запланирован')|list|length %}
+                            {{ upcoming + courses|selectattr('status', 'equalto', 'Набор')|list|length }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Общее кол-во часов</h6>
+                        <p class="card-text display-6">
+                            {{ courses|sum(attribute='hours') }}
+                            <small class="text-muted">часов</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 text-center">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Всего участников</h6>
+                        <p class="card-text display-6">
+                            {{ courses|sum_employees }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Кнопка быстрого добавления -->
+<div class="fixed-bottom text-end p-3">
+    <a href="{{ url_for('add_course') }}" class="btn btn-success btn-lg rounded-pill shadow-lg" 
+       style="width: 60px; height: 60px;" title="Добавить курс">
+        <i class="bi bi-plus" style="font-size: 1.5rem;"></i>
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function resetFilters() {
+    document.getElementById('filterForm').reset();
+    document.getElementById('filterForm').submit();
+}
+</script>
+{% endblock %}

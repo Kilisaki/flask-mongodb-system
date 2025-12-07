@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}📊 Отчеты по документам{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: none;
+        overflow: hidden;
+    }
+    
+    .report-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .export-dropdown .dropdown-menu {
+        min-width: 250px;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    
+    .report-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .chart-container {
+        height: 300px;
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-graph-up"></i> Отчеты по документам</h2>
+
+<!-- Общая статистика -->
+<div class="report-section">
+    <h4 class="mb-4"><i class="bi bi-bar-chart"></i> Общая статистика</h4>
+    <div class="row">
+        <div class="col-md-3 text-center mb-4">
+            <div class="card report-card">
+                <div class="card-body">
+                    <h6 class="card-title">Всего посылок</h6>
+                    <div class="stat-number">{{ reports.general_stats.total_parcels }}</div>
+                    <p class="card-text text-muted">В системе</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="card report-card">
+                <div class="card-body">
+                    <h6 class="card-title">Всего курсов</h6>
+                    <div class="stat-number">{{ reports.general_stats.total_courses }}</div>
+                    <p class="card-text text-muted">В системе</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="card report-card">
+                <div class="card-body">
+                    <h6 class="card-title">Посылок в пути</h6>
+                    <div class="stat-number">{{ reports.general_stats.parcels_in_transit }}</div>
+                    <p class="card-text text-muted">Активные доставки</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 text-center mb-4">
+            <div class="card report-card">
+                <div class="card-body">
+                    <h6 class="card-title">Предстоящих курсов</h6>
+                    <div class="stat-number">{{ reports.general_stats.upcoming_courses_count }}</div>
+                    <p class="card-text text-muted">Планируются</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-6 text-center">
+            <div class="card report-card">
+                <div class="card-body">
+                    <h6 class="card-title">Общая стоимость доставок</h6>
+                    <div class="stat-number">{{ reports.general_stats.total_delivery_cost|round(2) }}</div>
+                    <p class="card-text text-muted">рублей</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 text-center">
+            <div class="card report-card">
+                <div class="card-body">
+                    <h6 class="card-title">Общая стоимость курсов</h6>
+                    <div class="stat-number">{{ reports.general_stats.total_course_price|round(2) }}</div>
+                    <p class="card-text text-muted">рублей</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Отчеты по курьерской доставке -->
+<div class="report-section">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-box-seam"></i> Отчеты по курьерской доставке</h4>
+        <div class="export-dropdown">
+            <div class="btn-group">
+                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-download"></i> Экспорт всех отчетов
+                </button>
+                <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">PDF формат</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courier', report_name='heavy_parcels') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> Тяжелые посылки
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courier', report_name='in_transit') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> Посылки в пути
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courier', report_name='last_week') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> За неделю
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courier', report_name='courier_stats') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> Статистика по курьерам
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">DOCX формат</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_docx', report_type='courier', report_name='heavy_parcels') }}">
+                        <i class="bi bi-file-earmark-word"></i> Тяжелые посылки
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_docx', report_type='courier', report_name='in_transit') }}">
+                        <i class="bi bi-file-earmark-word"></i> Посылки в пути
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Тяжелые посылки -->
+        <div class="col-md-6 mb-4">
+            <div class="card report-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Тяжелые посылки (>5 кг)</h5>
+                    <span class="badge bg-primary">{{ reports.courier_reports.heavy_parcels|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if reports.courier_reports.heavy_parcels %}
+                        <div class="list-group list-group-flush">
+                            {% for parcel in reports.courier_reports.heavy_parcels[:5] %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ parcel.sender.full_name }} → {{ parcel.receiver.full_name }}</h6>
+                                        <small class="text-muted">Трек: {{ parcel.tracking_number if parcel.tracking_number else 'N/A' }}</small>
+                                    </div>
+                                    <span class="badge bg-warning">{{ parcel.parcel.weight }} кг</span>
+                                </div>
+                                <div class="mt-2">
+                                    <small>
+                                        <i class="bi bi-calendar"></i> {{ parcel.dates.dispatch_date }} | 
+                                        <i class="bi bi-person"></i> {{ parcel.courier.name }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if reports.courier_reports.heavy_parcels|length > 5 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">... и еще {{ reports.courier_reports.heavy_parcels|length - 5 }} посылок</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center py-4">Нет тяжелых посылок</p>
+                    {% endif %}
+                    <div class="mt-3 text-center">
+                        <a href="{{ url_for('export_pdf', report_type='courier', report_name='heavy_parcels') }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i> Скачать отчет
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Посылки в пути -->
+        <div class="col-md-6 mb-4">
+            <div class="card report-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Посылки в пути</h5>
+                    <span class="badge bg-warning">{{ reports.courier_reports.in_transit|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if reports.courier_reports.in_transit %}
+                        <div class="list-group list-group-flush">
+                            {% for parcel in reports.courier_reports.in_transit[:5] %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ parcel.tracking_number if parcel.tracking_number else 'N/A' }}</h6>
+                                        <small class="text-muted">{{ parcel.sender.full_name }} → {{ parcel.receiver.full_name }}</small>
+                                    </div>
+                                    <span class="badge bg-info">{{ parcel.status }}</span>
+                                </div>
+                                <div class="mt-2">
+                                    <small>
+                                        <i class="bi bi-calendar"></i> Доставка: {{ parcel.dates.delivery_date }} | 
+                                        <i class="bi bi-truck"></i> {{ parcel.courier.name }}
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if reports.courier_reports.in_transit|length > 5 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">... и еще {{ reports.courier_reports.in_transit|length - 5 }} посылок</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center py-4">Нет посылок в пути</p>
+                    {% endif %}
+                    <div class="mt-3 text-center">
+                        <a href="{{ url_for('export_pdf', report_type='courier', report_name='in_transit') }}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i> Скачать отчет
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Статистика по курьерам -->
+        <div class="col-md-12 mb-4">
+            <div class="card report-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Статистика по курьерам</h5>
+                </div>
+                <div class="card-body">
+                    {% if reports.courier_reports.courier_stats %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Курьер</th>
+                                        <th>Количество посылок</th>
+                                        <th>Общий вес (кг)</th>
+                                        <th>Средний вес</th>
+                                        <th>Общая стоимость</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stat in reports.courier_reports.courier_stats %}
+                                    <tr>
+                                        <td>{{ stat._id or 'Не указан' }}</td>
+                                        <td>{{ stat.count }}</td>
+                                        <td>{{ stat.total_weight|round(2) }}</td>
+                                        <td>{{ (stat.total_weight/stat.count)|round(2) if stat.count > 0 else 0 }}</td>
+                                        <td>{{ stat.total_cost|round(2) if stat.total_cost else 0 }} руб.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-4">Нет данных по курьерам</p>
+                    {% endif %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('export_pdf', report_type='courier', report_name='courier_stats') }}" 
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-download"></i> Скачать полный отчет
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Отчеты по курсам повышения квалификации -->
+<div class="report-section">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-mortarboard"></i> Отчеты по курсам повышения квалификации</h4>
+        <div class="export-dropdown">
+            <div class="btn-group">
+                <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-download"></i> Экспорт всех отчетов
+                </button>
+                <ul class="dropdown-menu">
+                    <li><h6 class="dropdown-header">PDF формат</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courses', report_name='upcoming_courses') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> Предстоящие курсы
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courses', report_name='long_courses') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> Длительные курсы
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courses', report_name='full_courses') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> Курсы с полными группами
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_pdf', report_type='courses', report_name='department_stats') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> Статистика по отделам
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">DOCX формат</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_docx', report_type='courses', report_name='upcoming_courses') }}">
+                        <i class="bi bi-file-earmark-word"></i> Предстоящие курсы
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_docx', report_type='courses', report_name='long_courses') }}">
+                        <i class="bi bi-file-earmark-word"></i> Длительные курсы
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Предстоящие курсы -->
+        <div class="col-md-6 mb-4">
+            <div class="card report-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Предстоящие курсы</h5>
+                    <span class="badge bg-success">{{ reports.courses_reports.upcoming_courses|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if reports.courses_reports.upcoming_courses %}
+                        <div class="list-group list-group-flush">
+                            {% for course in reports.courses_reports.upcoming_courses[:5] %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ course.course_name }}</h6>
+                                        <small class="text-muted">Код: {{ course.course_code if course.course_code else 'N/A' }}</small>
+                                    </div>
+                                    <span class="badge bg-info">{{ course.status }}</span>
+                                </div>
+                                <div class="mt-2">
+                                    <small>
+                                        <i class="bi bi-calendar"></i> {{ course.dates.start_date }} - {{ course.dates.end_date }} | 
+                                        <i class="bi bi-clock"></i> {{ course.hours }} часов
+                                    </small>
+                                </div>
+                                <div class="mt-1">
+                                    <small>
+                                        <i class="bi bi-person"></i> {{ course.teacher.name }} | 
+                                        <i class="bi bi-people"></i> {{ course.employees|length }}/3
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if reports.courses_reports.upcoming_courses|length > 5 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">... и еще {{ reports.courses_reports.upcoming_courses|length - 5 }} курсов</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center py-4">Нет предстоящих курсов</p>
+                    {% endif %}
+                    <div class="mt-3 text-center">
+                        <a href="{{ url_for('export_pdf', report_type='courses', report_name='upcoming_courses') }}" 
+                           class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-download"></i> Скачать отчет
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Длительные курсы -->
+        <div class="col-md-6 mb-4">
+            <div class="card report-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Длительные курсы (>40 часов)</h5>
+                    <span class="badge bg-primary">{{ reports.courses_reports.long_courses|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if reports.courses_reports.long_courses %}
+                        <div class="list-group list-group-flush">
+                            {% for course in reports.courses_reports.long_courses[:5] %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ course.course_name }}</h6>
+                                        <small class="text-muted">{{ course.teacher.name }}</small>
+                                    </div>
+                                    <span class="badge bg-warning">{{ course.hours }} часов</span>
+                                </div>
+                                <div class="mt-2">
+                                    <small>
+                                        <i class="bi bi-calendar"></i> {{ course.dates.start_date }} - {{ course.dates.end_date }} | 
+                                        <i class="bi bi-cash"></i> {{ course.price|default(0, true) }} руб.
+                                    </small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if reports.courses_reports.long_courses|length > 5 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">... и еще {{ reports.courses_reports.long_courses|length - 5 }} курсов</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center py-4">Нет длительных курсов</p>
+                    {% endif %}
+                    <div class="mt-3 text-center">
+                        <a href="{{ url_for('export_pdf', report_type='courses', report_name='long_courses') }}" 
+                           class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-download"></i> Скачать отчет
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Статистика по отделам -->
+        <div class="col-md-12 mb-4">
+            <div class="card report-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Статистика по отделам</h5>
+                </div>
+                <div class="card-body">
+                    {% if reports.courses_reports.department_stats %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Отдел</th>
+                                        <th>Количество сотрудников</th>
+                                        <th>Количество курсов</th>
+                                        <th>Среднее кол-во сотрудников на курс</th>
+                                        <th>Процент участия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set total_employees = reports.courses_reports.department_stats|sum(attribute='employee_count') %}
+                                    {% for stat in reports.courses_reports.department_stats %}
+                                    <tr>
+                                        <td>{{ stat.department or 'Не указан' }}</td>
+                                        <td>{{ stat.employee_count }}</td>
+                                        <td>{{ stat.course_count }}</td>
+                                        <td>
+                                            {% if stat.course_count > 0 %}
+                                                {{ (stat.employee_count/stat.course_count)|round(1) }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if total_employees > 0 %}
+                                                {{ ((stat.employee_count/total_employees)*100)|round(1) }}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center py-4">Нет данных по отделам</p>
+                    {% endif %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('export_pdf', report_type='courses', report_name='department_stats') }}" 
+                           class="btn btn-outline-success">
+                            <i class="bi bi-download"></i> Скачать полный отчет
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Быстрые отчеты -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Быстрые отчеты</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <a href="{{ url_for('export_pdf', report_type='courier', report_name='last_week') }}" 
+                           class="btn btn-outline-primary w-100 mb-3">
+                            <i class="bi bi-file-earmark-pdf"></i> Посылки за неделю (PDF)
+                        </a>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <a href="{{ url_for('export_docx', report_type='courier', report_name='last_week') }}" 
+                           class="btn btn-outline-primary w-100 mb-3">
+                            <i class="bi bi-file-earmark-word"></i> Посылки за неделю (DOCX)
+                        </a>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <a href="{{ url_for('export_pdf', report_type='courses', report_name='full_courses') }}" 
+                           class="btn btn-outline-success w-100 mb-3">
+                            <i class="bi bi-file-earmark-pdf"></i> Полные группы (PDF)
+                        </a>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <a href="{{ url_for('export_docx', report_type='courses', report_name='full_courses') }}" 
+                           class="btn btn-outline-success w-100 mb-3">
+                            <i class="bi bi-file-earmark-word"></i> Полные группы (DOCX)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Информация о системе -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Информация о системе</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Возможности отчетов:</h6>
+                        <ul>
+                            <li>Детальная статистика по всем типам документов</li>
+                            <li>Экспорт в PDF и DOCX форматах</li>
+                            <li>Фильтрация и сортировка данных</li>
+                            <li>Автоматическое обновление статистики</li>
+                            <li>Графическое представление данных</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Доступные форматы экспорта:</h6>
+                        <ul>
+                            <li><strong>PDF:</strong> Для печати и официальных документов</li>
+                            <li><strong>DOCX:</strong> Для дальнейшего редактирования в Word</li>
+                            <li><strong>CSV:</strong> Для анализа в Excel (скоро)</li>
+                            <li><strong>JSON:</strong> Для интеграции с другими системами (скоро)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        <i class="bi bi-clock"></i> Отчеты обновляются в реальном времени. Последнее обновление: {{ now.strftime('%d.%m.%Y %H:%M') if now else 'Н/Д' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Простая анимация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.report-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // Обновление времени
+    function updateTime() {
+        const now = new Date();
+        const timeElement = document.querySelector('.text-muted .bi-clock').parentElement;
+        if (timeElement) {
+            const formattedTime = now.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            timeElement.textContent = ' Отчеты обновляются в реальном времени. Последнее обновление: ' + formattedTime;
+        }
+    }
+    
+    // Обновляем время каждую минуту
+    updateTime();
+    setInterval(updateTime, 60000);
+});
+</script>
+{% endblock %}

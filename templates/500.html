@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Ошибка сервера{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 text-center py-5">
+        <div class="display-1 text-danger">500</div>
+        <h1 class="mb-4"><i class="bi bi-bug text-danger"></i> Ошибка сервера</h1>
+        <p class="lead mb-4">Произошла внутренняя ошибка сервера. Пожалуйста, попробуйте позже.</p>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Что можно сделать?</h5>
+                        <ul class="text-start">
+                            <li>Обновите страницу через несколько минут</li>
+                            <li>Вернитесь на <a href="{{ url_for('index') }}">главную страницу</a></li>
+                            <li>Проверьте корректность введенных данных</li>
+                            <li>Сообщите об ошибке администратору системы</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-house-door"></i> Вернуться на главную
+            </a>
+            <button onclick="location.reload()" class="btn btn-warning btn-lg ms-2">
+                <i class="bi bi-arrow-clockwise"></i> Обновить страницу
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

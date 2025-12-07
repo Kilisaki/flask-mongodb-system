@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Посылка {{ parcel.tracking_number }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Главная</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('courier_list') }}">Посылки</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Посылка {{ parcel.tracking_number }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="bi bi-box-seam"></i> Посылка #{{ parcel.tracking_number }}
+                {% if parcel.status == 'Доставлено' %}
+                    <span class="badge bg-success ms-2">{{ parcel.status }}</span>
+                {% elif parcel.status == 'В пути' %}
+                    <span class="badge bg-warning ms-2">{{ parcel.status }}</span>
+                {% elif parcel.status == 'Отменено' %}
+                    <span class="badge bg-danger ms-2">{{ parcel.status }}</span>
+                {% else %}
+                    <span class="badge bg-info ms-2">{{ parcel.status }}</span>
+                {% endif %}
+            </h2>
+            <div>
+                <a href="{{ url_for('edit_courier', id=parcel._id) }}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Редактировать
+                </a>
+                <a href="{{ url_for('courier_list') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Назад
+                </a>
+            </div>
+        </div>
+        
+        <!-- Основная информация -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-up"></i> Отправитель</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">ФИО:</th>
+                                <td>{{ parcel.sender.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Адрес:</th>
+                                <td>{{ parcel.sender.address }}</td>
+                            </tr>
+                            <tr>
+                                <th>Паспорт:</th>
+                                <td>
+                                    Серия: {{ parcel.sender.passport.series }}<br>
+                                    Номер: {{ parcel.sender.passport.number }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Дата рождения:</th>
+                                <td>{{ parcel.sender.passport.birth_date }}</td>
+                            </tr>
+                            <tr>
+                                <th>Пол:</th>
+                                <td>{{ parcel.sender.passport.gender }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-down"></i> Получатель</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">ФИО:</th>
+                                <td>{{ parcel.receiver.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Адрес:</th>
+                                <td>{{ parcel.receiver.address }}</td>
+                            </tr>
+                            <tr>
+                                <th>Паспорт:</th>
+                                <td>
+                                    Серия: {{ parcel.receiver.passport.series }}<br>
+                                    Номер: {{ parcel.receiver.passport.number }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Дата рождения:</th>
+                                <td>{{ parcel.receiver.passport.birth_date }}</td>
+                            </tr>
+                            <tr>
+                                <th>Пол:</th>
+                                <td>{{ parcel.receiver.passport.gender }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Информация о посылке -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-box"></i> Информация о посылке</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="50%">Вес:</th>
+                                        <td>{{ parcel.parcel.weight }} кг</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Габариты:</th>
+                                        <td>
+                                            {{ parcel.parcel.dimensions.length }} × 
+                                            {{ parcel.parcel.dimensions.width }} × 
+                                            {{ parcel.parcel.dimensions.height }} см
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Объем:</th>
+                                        <td>
+                                            {% set volume = parcel.parcel.dimensions.length * parcel.parcel.dimensions.width * parcel.parcel.dimensions.height / 1000000 %}
+                                            {{ "%.3f"|format(volume) }} м³
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th width="50%">Особые отметки:</th>
+                                        <td>
+                                            {% if parcel.parcel.fragile %}
+                                                <span class="badge bg-warning"><i class="bi bi-exclamation-triangle"></i> Хрупкое</span>
+                                            {% endif %}
+                                            {% if parcel.parcel.insured %}
+                                                <span class="badge bg-success"><i class="bi bi-shield-check"></i> Застраховано</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Стоимость доставки:</th>
+                                        <td>{{ parcel.delivery_cost|default(0, true) }} руб.</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Трек номер:</th>
+                                        <td><strong>{{ parcel.tracking_number }}</strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        {% if parcel.parcel.description %}
+                        <div class="mt-3">
+                            <h6>Описание:</h6>
+                            <p>{{ parcel.parcel.description }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0"><i class="bi bi-truck"></i> Информация о курьере</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="50%">ФИО курьера:</th>
+                                <td>{{ parcel.courier.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Телефон:</th>
+                                <td>{{ parcel.courier.phone }}</td>
+                            </tr>
+                            {% if parcel.courier.company %}
+                            <tr>
+                                <th>Компания:</th>
+                                <td>{{ parcel.courier.company }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if parcel.courier.vehicle %}
+                            <tr>
+                                <th>Транспорт:</th>
+                                <td>{{ parcel.courier.vehicle }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Даты и статус -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Даты и статус</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 border rounded">
+                                    <h6>Дата отправления</h6>
+                                    <h4 class="text-primary">{{ parcel.dates.dispatch_date }}</h4>
+                                    <small class="text-muted">Планируемая</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 border rounded">
+                                    <h6>Ожидаемая дата получения</h6>
+                                    <h4 class="text-warning">{{ parcel.dates.delivery_date }}</h4>
+                                    <small class="text-muted">Ожидается</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 border rounded">
+                                    <h6>Фактическая дата получения</h6>
+                                    <h4 class="text-success">
+                                        {% if parcel.dates.actual_delivery_date %}
+                                            {{ parcel.dates.actual_delivery_date }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </h4>
+                                    <small class="text-muted">
+                                        {% if parcel.status == 'Доставлено' %}
+                                            Доставлено
+                                        {% else %}
+                                            В процессе
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Прогресс доставки -->
+                        <div class="mt-4">
+                            <h6>Статус доставки:</h6>
+                            <div class="progress" style="height: 25px;">
+                                {% if parcel.status == 'Доставлено' %}
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 100%">Доставлено</div>
+                                {% elif parcel.status == 'В пути' %}
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 75%">В пути</div>
+                                {% elif parcel.status == 'В пункте выдачи' %}
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: 90%">В пункте выдачи</div>
+                                {% elif parcel.status == 'Обработка' %}
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: 50%">Обработка</div>
+                                {% elif parcel.status == 'Принято' %}
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 25%">Принято</div>
+                                {% else %}
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 100%">{{ parcel.status }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row mt-3 text-center">
+                                <div class="col">
+                                    <small class="text-muted">Принято → Обработка → В пути → Доставлено</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Мета-информация -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-plus"></i> Создано: 
+                                    {{ parcel.created_at.strftime('%d.%m.%Y %H:%M') if parcel.created_at else 'Н/Д' }}
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-check"></i> Обновлено: 
+                                    {% if parcel.updated_at %}
+                                        {{ parcel.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                                    {% else %}
+                                        Не обновлялось
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Действия -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="{{ url_for('courier_list') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> К списку посылок
+                        </a>
+                        <a href="{{ url_for('add_courier') }}" class="btn btn-primary ms-2">
+                            <i class="bi bi-plus-circle"></i> Добавить новую посылку
+                        </a>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('edit_courier', id=parcel._id) }}" class="btn btn-warning">
+                            <i class="bi bi-pencil"></i> Редактировать
+                        </a>
+                        <a href="{{ url_for('delete_courier', id=parcel._id) }}" 
+                           class="btn btn-danger ms-2"
+                           onclick="return confirm('Вы уверены, что хотите удалить эту посылку?')">
+                            <i class="bi bi-trash"></i> Удалить
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
